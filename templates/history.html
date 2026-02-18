@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Search History</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <div class="top-bar">
+        <span>👤 {{ session['user'] }}</span>
+        <div class="top-actions">
+            <button class="action-btn" onclick="toggleTheme()">Theme</button>
+            <a href="/" class="action-btn">Search</a>
+            <a href="/logout" class="action-btn logout">Logout</a>
+        </div>
+    </div>
+
+    <div class="page-wrapper">
+
+        <h1 class="page-title">Search History</h1>
+
+        {% if history %}
+        <div class="history-list">
+            {% for item in history %}
+            <div class="history-card">
+                <div class="history-text">
+                    {{ item.query }}
+                </div>
+
+                <form method="POST" action="/delete_history/{{ item.id }}" style="margin: 0;">
+                    <button class="delete-btn" title="Delete">✕</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="card" style="text-align: center; color: var(--text-muted);">
+            <p>No search history yet.</p>
+        </div>
+        {% endif %}
+
+        <a href="/" style="display: inline-block; margin-top: 2rem;">&larr; Back to Search</a>
+
+    </div>
+
+    <script>
+        function toggleTheme() {
+            const theme = document.documentElement.getAttribute("data-theme");
+            const newTheme = theme === "dark" ? "light" : "dark";
+            document.documentElement.setAttribute("data-theme", newTheme);
+            localStorage.setItem("theme", newTheme);
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const saved = localStorage.getItem("theme") || "light";
+            document.documentElement.setAttribute("data-theme", saved);
+        });
+    </script>
+
+</body>
+
+</html>

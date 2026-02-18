@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Search Results</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <div class="top-bar">
+        <span>👤 {{ session['user'] }}</span>
+
+        <div class="top-actions">
+            <a href="/history" class="action-btn history">History</a>
+            <button class="action-btn" onclick="toggleTheme()">Theme</button>
+            <a href="/logout" class="action-btn logout">Logout</a>
+        </div>
+    </div>
+
+    <div class="mode-indicator">
+        Current Mode: <strong>{{ mode|upper }}</strong>
+    </div>
+
+
+    <div class="page-wrapper">
+
+        <h1 class="page-title">
+            Results for <span>"{{ query }}"</span>
+        </h1>
+
+        {% if math_result %}
+        <div class="answer-card math">
+            <div class="answer-header">Math Result</div>
+            <div class="answer-body">
+                {{ math_result }}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if ai_answer %}
+        <div class="answer-card ai">
+            <div class="answer-header">AI Answer</div>
+            <div class="answer-body">
+                {{ ai_answer }}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if results %}
+        <div class="results-list">
+            {% for r in results %}
+            <div class="result-card">
+                <h3>{{ r.title }}</h3>
+                <p>{{ r.content }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if not results and not math_result and not ai_answer %}
+        <div class="card" style="text-align: center; color: var(--text-muted);">
+            <p>No results found.</p>
+        </div>
+        {% endif %}
+
+        <a href="/" style="display: inline-block; margin-top: 2rem;">&larr; Back to Search</a>
+
+    </div>
+
+    <script>
+        function toggleTheme() {
+            const theme = document.documentElement.getAttribute("data-theme");
+            const newTheme = theme === "dark" ? "light" : "dark";
+            document.documentElement.setAttribute("data-theme", newTheme);
+            localStorage.setItem("theme", newTheme);
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const saved = localStorage.getItem("theme") || "light";
+            document.documentElement.setAttribute("data-theme", saved);
+        });
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Mini Search Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <div class="top-bar">
+        <span>👤 {{ session['user'] }}</span>
+
+        <form action="/toggle_mode" method="post" class="mode-toggle">
+            <span class="mode-label">Offline</span>
+        <label class="switch">
+        
+        <input type="checkbox" onchange="this.form.submit()"
+               {% if session.get('mode') == 'online' %}
+                    checked
+               {% endif %}>
+        <span class="slider"></span>
+        </label>
+        <span class="mode-label">Online</span>
+        </form>
+
+
+        <div class="top-actions">
+            <a href="/history" class="action-btn history">History</a>
+            <button class="action-btn" onclick="toggleTheme()" id="theme-btn">Theme</button>
+            <a href="/logout" class="action-btn logout">Logout</a>
+        </div>
+    </div>
+
+    <form action="/toggle_mode" method="POST" style="display:inline;">
+        <button class="mode-btn">
+            Mode: {{ session.get("mode", "offline").upper() }}
+        </button>
+    </form>
+
+
+    <div class="search-container">
+        <h1>Mini Search Engine</h1>
+
+        <form action="/search" method="POST" class="search-box">
+            <input type="text" name="query" placeholder="Search here..." value="{{ query if query is defined else '' }}"
+                required autofocus>
+            <button type="submit">Search</button>
+        </form>
+    </div>
+
+    <a href="/history" style="display: none;"></a>
+
+    <button class="voice-btn" onclick="startVoice()">🎙</button>
+    <button class="stop-btn" onclick="forceStop()">⛔</button>
+
+    <div id="voice-output" class="voice-output hidden"></div>
+
+    <script>
+        let recognition;
+        let isSpeaking = false;
+        let synth = window.speechSynthesis;
+
+        function startVoice() {
+            if (!('webkitSpeechRecognition' in window)) {
+                alert("Speech Recognition not supported");
+                return;
+            }
+
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = false;
+            recognition.lang = "en-US";
+
+            recognition.onresult = function (event) {
+                const text = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+                showText(text);
+
+                if (text.includes("stop")) {
+                    stopSpeaking();
+                    recognition.stop();
+                    return;
+                }
+
+                askAI(text);
+            };
+
+            recognition.start();
+        }
+
+        function askAI(text) {
+            fetch("/voice_ai", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query: text })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    speak(data.answer);
+                    showText(data.answer);
+                });
+        }
+
+        function speak(text) {
+            stopSpeaking();
+            let utterance = new SpeechSynthesisUtterance(text);
+            isSpeaking = true;
+            utterance.onend = () => isSpeaking = false;
+            synth.speak(utterance);
+        }
+
+        function stopSpeaking() {
+            if (synth.speaking) {
+                synth.cancel();
+                isSpeaking = false;
+            }
+        }
+
+        function showText(text) {
+            const box = document.getElementById("voice-output");
+            box.classList.remove("hidden");
+            box.innerText = text;
+        }
+
+        function forceStop() {
+            if (recognition) {
+                recognition.stop();
+            }
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+            }
+            showText("Stopped.");
+        }
+
+        function toggleTheme() {
+            const theme = document.documentElement.getAttribute("data-theme");
+            const newTheme = theme === "dark" ? "light" : "dark";
+            document.documentElement.setAttribute("data-theme", newTheme);
+            localStorage.setItem("theme", newTheme);
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const saved = localStorage.getItem("theme") || "light";
+            document.documentElement.setAttribute("data-theme", saved);
+        });
+    </script>
+
+</body>
+
+</html>
